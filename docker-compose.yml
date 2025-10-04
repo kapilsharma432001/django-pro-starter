@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  web:
+    build: .
+    command: bash -lc "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      DJANGO_ENV: dev
+      SECRET_KEY: dev-please-change-me
+      ALLOWED_HOSTS: 127.0.0.1,localhost
+      DATABASE_URL: postgres://postgres:postgres@db:5432/appdb
+      REDIS_URL: redis://redis:6379/1
+      THROTTLE_ANON: 100/minute
+      THROTTLE_USER: 300/minute
+    ports: ["8000:8000"]
+    depends_on: [db, redis]
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:

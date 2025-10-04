@@ -66,6 +66,16 @@ DATABASES = {
     )
 }
 
+# Redis cache: used by DRF throttling & future features
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("REDIS_URL", default="redis://127.0.0.1:6379/1"),
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "KEY_PREFIX": "djpro",
+    }
+}
+
 AUTH_USER_MODEL = "users.User"
 
 LANGUAGE_CODE = "en-us"
@@ -81,7 +91,31 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
-        # We'll add JWT later
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_ANON", default="50/minute"),
+        "user": env("THROTTLE_USER", default="200/minute"),
+    },
+
+    # OpenAPI schema generator (drf-spectacular)
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+INSTALLED_APPS += [
+    "drf_spectacular",
+]
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Django Pro Starter API",
+    "DESCRIPTION": "API for Django Pro Starter",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
